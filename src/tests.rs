@@ -1,0 +1,34 @@
+#[cfg(test)]
+mod tests {
+    use serde_json::{from_str, Value};
+
+    use crate::compare_json_keys;
+
+    #[test]
+    fn flat_correct() {
+        let json1: Value = from_str("{\"a\":\"\"}").unwrap();
+        let json2: Value = from_str("{\"a\":\"\"}").unwrap();
+        assert_eq!(compare_json_keys(&json1, &json2).is_empty(), true);
+    }
+
+    #[test]
+    fn nested_correct() {
+        let json1: Value = from_str("{\"a\":{\"b\":\"\"}}").unwrap();
+        let json2: Value = from_str("{\"a\":{\"b\":\"\"}}").unwrap();
+        assert_eq!(compare_json_keys(&json1, &json2).is_empty(), true);
+    }
+
+    #[test]
+    fn flat_incorrect() {
+        let json1: Value = from_str("{\"a\":\"\"}").unwrap();
+        let json2: Value = from_str("{\"b\":\"\"}").unwrap();
+        assert_eq!(compare_json_keys(&json1, &json2).is_empty(), false);
+    }
+
+    #[test]
+    fn nested_incorrect() {
+        let json1: Value = from_str("{\"a\":{\"b\":\"\"}}").unwrap();
+        let json2: Value = from_str("{\"a\":{\"c\":\"\"}}").unwrap();
+        assert_eq!(compare_json_keys(&json1, &json2).is_empty(), false);
+    }
+}

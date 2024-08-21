@@ -1,0 +1,90 @@
+use std::{env, fs, process};
+use std::collections::HashSet;
+use std::path::PathBuf;
+
+use colored::Colorize;
+use serde_json::Value;
+
+mod tests;
+
+pub fn extract_nested_keys(value: &Value, parent_key: &str, keys: &mut HashSet<String>) {
+    match value {
+        Value::Object(map) => {
+            for (key, val) in map {
+                let full_key = if parent_key.is_empty() {
+                    key.clone()
+                } else {
+                    format!("{}.{}", parent_key, key)
+                };
+
+                keys.insert(full_key.clone());
+                extract_nested_keys(val, &full_key, keys);
+            }
+        }
+        Value::Array(arr) => {
+            for (index, item) in arr.iter().enumerate() {
+                let full_key = format!("{}[{}]", parent_key, index);
+                extract_nested_keys(item, &full_key, keys);
+            }
+        }
+        _ => {}
+    }
+}
+
+pub fn compare_json_keys(main_json: &Value, other_json: &Value) -> HashSet<String> {
+    let mut main_keys = HashSet::new();
+    let mut other_keys = HashSet::new();
+
+    extract_nested_keys(main_json, "", &mut main_keys);
+    extract_nested_keys(other_json, "", &mut other_keys);
+
+    main_keys
+        .difference(&other_keys)
+        .cloned()
+        .collect()
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 3 {
+        eprintln!("Usage: {} <main_file> <other_file_1> <other_file_2> ... [--fail]", args[0]);
+        eprintln!("  --fail: Exit with non-zero status if any files are missing keys.");
+        process::exit(1);
+    }
+
+    let exit_on_fail = &args.iter().any(|arg| arg == "--fail");
+
+    let main_file = PathBuf::from(&args[1]);
+    let other_file_paths = args[2..].iter().filter(|x| !x.is_empty() && !x.starts_with("--")).map(PathBuf::from).collect::<Vec<_>>().into_iter();
+
+    let main_content = fs::read_to_string(main_file)?;
+    let main_json: Value = serde_json::from_str(&main_content)?;
+
+    let mut all_files_valid = true;
+
+    for other_file in other_file_paths {
+        let other_content = fs::read_to_string(other_file.clone())?;
+        let other_json: Value = serde_json::from_str(&other_content)?;
+
+        let differences = compare_json_keys(&main_json, &other_json);
+
+        for difference in &differences {
+            eprintln!("{}", format!("Key '{}' is present in the main file but not in the compared file '{}'", difference, other_file.display()).red())
+        }
+
+        if !differences.is_empty() {
+            all_files_valid = false;
+        }
+    }
+
+    if all_files_valid {
+        println!("All files are valid.");
+        process::exit(0);
+    }
+
+    if *exit_on_fail {
+        process::exit(1);
+    }
+
+    Ok(())
+}
