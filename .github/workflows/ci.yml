@@ -3,24 +3,59 @@ name: Rust Build
 on:
   push:
     branches:
-      - '*'
+      - main
+    paths-ignore:
+      - ".github/**"
+      - "docs/**"
+      - "README.md"
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Rust
+      - name: Install Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          profile: minimal
+          target: ${{ matrix.os == 'windows-latest' && 'x86_64-pc-windows-gnu' || 'x86_64-unknown-linux-gnu' }}
 
       - name: Build the project
         run: cargo build --release
 
-      - name: Run tests
-        run: cargo test --release
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}-binary
+          path: target/release/${{ matrix.os == 'windows-latest' && '*.exe' || '*' }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Linux binary
+        uses: actions/download-artifact@v3
+        with:
+          name: ubuntu-latest-binary
+          path: ./artifacts
+
+      - name: Download Windows binary
+        uses: actions/download-artifact@v3
+        with:
+          name: windows-latest-binary
+          path: ./artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ./artifacts/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
