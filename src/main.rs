@@ -47,13 +47,17 @@ pub fn compare_json_keys(main_json: &Value, other_json: &Value) -> HashSet<Strin
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 3 {
-        eprintln!("Usage: {} <main_file> <other_file_1> <other_file_2> ... [--fail]", args[0]);
-        eprintln!("  --fail: Exit with non-zero status if any files are missing keys.");
-        process::exit(1);
-    }
 
     let exit_on_fail = &args.iter().any(|arg| arg == "--fail");
+    let sort_lines = &args.iter().any(|arg| arg == "--sort");
+    let help = &args.iter().any(|arg| arg == "--help");
+
+    if args.len() < 3 || *help {
+        eprintln!("Usage: {} <main_file> <other_file_1> <other_file_2> ... [--fail]", args[0]);
+        eprintln!("  --fail: Exit with non-zero status if any files are missing keys.");
+        eprintln!("  --sort: Sort the output keys alphabetically.");
+        process::exit(if *help { 0 } else { 1 });
+    }
 
     let main_file = PathBuf::from(&args[1]);
     let other_file_paths = args[2..].iter().filter(|x| !x.is_empty() && !x.starts_with("--")).map(PathBuf::from).collect::<Vec<_>>().into_iter();
@@ -67,7 +71,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let other_content = fs::read_to_string(other_file.clone())?;
         let other_json: Value = serde_json::from_str(&other_content)?;
 
-        let differences = compare_json_keys(&main_json, &other_json);
+        let mut differences: Vec<String> = compare_json_keys(&main_json, &other_json).iter().map(|key| key.to_string()).collect();
+
+        if *sort_lines {
+            differences.sort();
+        }
 
         for difference in &differences {
             eprintln!("{}", format!("Key '{}' is present in the main file but not in the compared file '{}'", difference, other_file.display()).red())
