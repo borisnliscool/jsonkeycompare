@@ -60,7 +60,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let main_file = PathBuf::from(&args[1]);
-    let other_file_paths = args[2..].iter().filter(|x| !x.is_empty() && !x.starts_with("--")).map(PathBuf::from).collect::<Vec<_>>().into_iter();
+    let other_file_paths = args[2..]
+        .iter()
+        .filter(|x| !x.is_empty() && !x.starts_with("--") && x.to_string() != args[1])
+        .map(PathBuf::from)
+        .collect::<Vec<_>>()
+        .into_iter();
+
+    if other_file_paths.len() == 0 {
+        eprintln!("Error: No other files provided.");
+        process::exit(1);
+    }
 
     let main_content = fs::read_to_string(main_file)?;
     let main_json: Value = serde_json::from_str(&main_content)?;
