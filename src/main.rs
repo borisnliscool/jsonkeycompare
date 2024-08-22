@@ -72,12 +72,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         process::exit(1);
     }
 
-    let main_content = fs::read_to_string(main_file)?;
+    let main_content = fs::read_to_string(&main_file)?;
     let main_json: Value = serde_json::from_str(&main_content)?;
 
     let mut all_files_valid = true;
 
     for other_file in other_file_paths.clone() {
+        println!("\n{}", format!("Comparing '{}' to '{}'", main_file.display().to_string().blue(), other_file.display().to_string().blue()).green());
+
         let other_content = fs::read_to_string(other_file.clone())?;
         let other_json: Value = serde_json::from_str(&other_content)?;
 
@@ -88,11 +90,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
 
         for difference in &differences {
-            eprintln!("{}", format!("Key '{}' is present in the main file but not in the compared file '{}'", difference, other_file.display()).red())
+            eprintln!(" - Key '{}' is present in the main file but not in the compared file '{}'", difference.red(), other_file.display().to_string().yellow());
         }
 
         if !differences.is_empty() {
             all_files_valid = false;
+        } else {
+            println!("{}", format!("All keys are present in '{}'.", other_file.display().to_string().blue()).green());
         }
     }
 
