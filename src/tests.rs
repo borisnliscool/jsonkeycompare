@@ -38,4 +38,18 @@ mod test {
         let json2: Value = from_str("{\"b\":{\"b\":\"\"}}").unwrap();
         assert!(!compare_json_keys(&json1, &json2).is_empty());
     }
+
+    #[test]
+    fn array_correct() {
+        let json1: Value = from_str("{\"a\":[\"b\"]}").unwrap();
+        let json2: Value = from_str("{\"a\":[\"b\"]}").unwrap();
+        assert!(compare_json_keys(&json1, &json2).is_empty());
+    }
+
+    #[test]
+    fn array_incorrect() {
+        let json1: Value = from_str("{\"a\":[\"b\",\"c\"]}").unwrap();
+        let json2: Value = from_str("{\"a\":[\"b\"]}").unwrap();
+        assert!(!compare_json_keys(&json1, &json2).is_empty());
+    }
 }

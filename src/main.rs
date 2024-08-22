@@ -25,6 +25,7 @@ pub fn extract_nested_keys(value: &Value, parent_key: &str, keys: &mut HashSet<S
             for (index, item) in arr.iter().enumerate() {
                 let full_key = format!("{}[{}]", parent_key, index);
                 extract_nested_keys(item, &full_key, keys);
+                keys.insert(full_key.clone());
             }
         }
         _ => {}
@@ -62,7 +63,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut all_files_valid = true;
 
-    for other_file in other_file_paths {
+    for other_file in other_file_paths.clone() {
         let other_content = fs::read_to_string(other_file.clone())?;
         let other_json: Value = serde_json::from_str(&other_content)?;
 
@@ -78,7 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if all_files_valid {
-        println!("All files are valid.");
+        println!("All {} files are valid.", other_file_paths.len());
         process::exit(0);
     }
 
