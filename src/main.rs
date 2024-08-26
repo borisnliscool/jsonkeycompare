@@ -68,7 +68,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .into_iter();
 
     if other_file_paths.len() == 0 {
-        eprintln!("Error: No other files provided.");
+        eprintln!("{}", "Error: No other files provided.".red());
         process::exit(1);
     }
 
@@ -78,7 +78,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut all_files_valid = true;
 
     for other_file in other_file_paths.clone() {
-        println!("\n{}", format!("Comparing '{}' to '{}'", main_file.display().to_string().blue(), other_file.display().to_string().blue()).green());
+        println!("\n{}", format!("Comparing '{}' to '{}'", other_file.display().to_string().blue(), main_file.display().to_string().blue()).green());
 
         let other_content = fs::read_to_string(other_file.clone())?;
         let other_json: Value = serde_json::from_str(&other_content)?;
@@ -101,7 +101,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if all_files_valid {
-        println!("All {} files are valid.", other_file_paths.len());
+        println!("\n{}", format!("All {} files are valid.", other_file_paths.len()).green());
         process::exit(0);
     }
 
