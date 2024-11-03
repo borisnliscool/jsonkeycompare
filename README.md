@@ -3,6 +3,14 @@
 A very simple program that compares two or more JSON files and reports any keys that are present in the first file but
 not in any of the other files.
 
+#### Installation:
+
+Install from [crates.io](https://crates.io/crates/jsonkeycompare), or build from source.
+
+```
+cargo install jsonkeycompare
+``` 
+
 #### Usage:
 
 ```shell
